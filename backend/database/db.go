@@ -15,9 +15,9 @@ var DB *sql.DB
 func Connect() {
 	host := getEnv("DB_HOST", "localhost")
 	port := getEnv("DB_PORT", "3306")
-	user := getEnv("DB_USER", "skillpulse")
+	user := getEnv("DB_USER", "skillpulse_db")
 	password := getEnv("DB_PASSWORD", "skillpulse123")
-	dbname := getEnv("DB_NAME", "skillpulse")
+	dbname := getEnv("DB_NAME", "skillpulse_user")
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", user, password, host, port, dbname)
 
