@@ -11,10 +11,12 @@ import (
 func GetSkills(c *gin.Context) {
 	rows, err := database.DB.Query(`
 		SELECT s.id, s.name, s.category, s.target_hours,
-		       COALESCE(SUM(l.hours), 0) as total_hours, s.created_at
+		       COALESCE(SUM(l.hours), 0) as total_hours, s.status,
+		       COALESCE(DATE_FORMAT(MAX(l.log_date), '%Y-%m-%d'), '') as last_logged,
+		       s.created_at
 		FROM skills s
 		LEFT JOIN learning_logs l ON s.id = l.skill_id
-		GROUP BY s.id, s.name, s.category, s.target_hours, s.created_at
+		GROUP BY s.id, s.name, s.category, s.target_hours, s.status, s.created_at
 		ORDER BY s.created_at DESC
 	`)
 	if err != nil {
@@ -26,7 +28,7 @@ func GetSkills(c *gin.Context) {
 	skills := []models.Skill{}
 	for rows.Next() {
 		var s models.Skill
-		if err := rows.Scan(&s.ID, &s.Name, &s.Category, &s.TargetHours, &s.TotalHours, &s.CreatedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.Name, &s.Category, &s.TargetHours, &s.TotalHours, &s.Status, &s.LastLogged, &s.CreatedAt); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -43,9 +45,14 @@ func CreateSkill(c *gin.Context) {
 		return
 	}
 
+	status := req.Status
+	if status == "" {
+		status = "active"
+	}
+
 	result, err := database.DB.Exec(
-		"INSERT INTO skills (name, category, target_hours) VALUES (?, ?, ?)",
-		req.Name, req.Category, req.TargetHours,
+		"INSERT INTO skills (name, category, target_hours, status) VALUES (?, ?, ?, ?)",
+		req.Name, req.Category, req.TargetHours, status,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -56,18 +63,52 @@ func CreateSkill(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"id": id, "message": "Skill created"})
 }
 
+func UpdateSkill(c *gin.Context) {
+	id := c.Param("id")
+
+	var req models.UpdateSkillRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	status := req.Status
+	if status == "" {
+		status = "active"
+	}
+
+	result, err := database.DB.Exec(
+		"UPDATE skills SET name = ?, category = ?, target_hours = ?, status = ? WHERE id = ?",
+		req.Name, req.Category, req.TargetHours, status, id,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Skill not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Skill updated"})
+}
+
 func GetSkill(c *gin.Context) {
 	id := c.Param("id")
 
 	var skill models.Skill
 	err := database.DB.QueryRow(`
 		SELECT s.id, s.name, s.category, s.target_hours,
-		       COALESCE(SUM(l.hours), 0) as total_hours, s.created_at
+		       COALESCE(SUM(l.hours), 0) as total_hours, s.status,
+		       COALESCE(DATE_FORMAT(MAX(l.log_date), '%Y-%m-%d'), '') as last_logged,
+		       s.created_at
 		FROM skills s
 		LEFT JOIN learning_logs l ON s.id = l.skill_id
 		WHERE s.id = ?
-		GROUP BY s.id, s.name, s.category, s.target_hours, s.created_at
-	`, id).Scan(&skill.ID, &skill.Name, &skill.Category, &skill.TargetHours, &skill.TotalHours, &skill.CreatedAt)
+		GROUP BY s.id, s.name, s.category, s.target_hours, s.status, s.created_at
+	`, id).Scan(&skill.ID, &skill.Name, &skill.Category, &skill.TargetHours, &skill.TotalHours, &skill.Status, &skill.LastLogged, &skill.CreatedAt)
 
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Skill not found"})
@@ -76,7 +117,7 @@ func GetSkill(c *gin.Context) {
 
 	// Get learning logs for this skill
 	rows, err := database.DB.Query(
-		"SELECT id, skill_id, hours, notes, log_date, created_at FROM learning_logs WHERE skill_id = ? ORDER BY log_date DESC",
+		"SELECT id, skill_id, hours, COALESCE(notes, ''), DATE_FORMAT(log_date, '%Y-%m-%d'), created_at FROM learning_logs WHERE skill_id = ? ORDER BY log_date DESC, id DESC",
 		id,
 	)
 	if err != nil {

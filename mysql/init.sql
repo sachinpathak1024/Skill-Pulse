@@ -1,15 +1,26 @@
 -- SkillPulse Database Schema
-
-CREATE DATABASE IF NOT EXISTS skillpulse_db;
-USE skillpulse_db;
+--
+-- This script runs inside the database created by the MYSQL_DATABASE env var
+-- (see docker-compose.yml / k8s ConfigMap), so it does NOT hardcode a database
+-- name. Whatever you set as DB_NAME is what the app connects to and what these
+-- tables are created in — keep .env, docker-compose and the manifests in sync.
 
 CREATE TABLE IF NOT EXISTS skills (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     category VARCHAR(50) DEFAULT '',
     target_hours INT DEFAULT 0,
+    status VARCHAR(20) NOT NULL DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Key/value app settings (e.g. the weekly hours goal shown on the dashboard).
+CREATE TABLE IF NOT EXISTS settings (
+    setting_key VARCHAR(50) PRIMARY KEY,
+    setting_value VARCHAR(255) NOT NULL
+);
+
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('weekly_goal', '10');
 
 CREATE TABLE IF NOT EXISTS learning_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -39,3 +50,7 @@ INSERT INTO learning_logs (skill_id, hours, notes, log_date) VALUES
     (3, 1.5, 'Built REST API with Gin framework', '2026-03-15'),
     (4, 1.0, 'Created Azure DevOps org and project', '2026-03-16'),
     (5, 1.5, 'Terraform basics - providers, resources, state', '2026-03-17');
+
+-- A little status variety for the demo (most skills stay 'active')
+UPDATE skills SET status = 'paused'    WHERE name = 'Azure DevOps';
+UPDATE skills SET status = 'completed' WHERE name = 'Go';

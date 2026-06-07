@@ -160,11 +160,26 @@ API surface:
 GET    /api/skills              list skills + total hours
 POST   /api/skills              create skill
 GET    /api/skills/:id          one skill + its logs
+PUT    /api/skills/:id          update a skill (name/category/target)
 DELETE /api/skills/:id          delete skill (cascades logs)
 POST   /api/skills/:id/log      log a study session
+PUT    /api/logs/:id            edit a logged session
+DELETE /api/logs/:id            delete a logged session
 GET    /api/dashboard           summary counters
+GET    /api/analytics           daily hours+sessions, category split, streaks, weekly total
+GET    /api/activity            recent sessions across all skills (?limit=N)
+GET    /api/settings            app settings (e.g. weekly_goal)
+PUT    /api/settings            upsert settings
+GET    /api/export              download all data (?format=csv|json)
 GET    /health                  DB ping for healthchecks
 ```
+
+The frontend is a single-page app with a **Dashboard** view and a **My Skills** view — all hand-rendered inline SVG, still no build step:
+
+- **Dashboard**: a smart insight banner, stat cards with "vs last week" deltas, achievement badges, a learning-streak + editable weekly-goal panel, an interactive hours-over-time chart (7d/30d/90d/all + hover tooltips), a category donut, hours-per-week bars, a day-of-week breakdown, a recent-activity feed, a "needs attention" nudge for stale skills, and a GitHub-style activity heatmap.
+- **My Skills**: search, category filter chips, status filter (active/paused/completed), sorting, and a click-through skill detail with full session history + inline edit/delete.
+
+Skills carry a **status** (`active`/`paused`/`completed`) and the **weekly goal** is persisted in a `settings` table. Existing databases are upgraded automatically by an idempotent migration on backend startup (`database.Migrate`).
 
 ---
 

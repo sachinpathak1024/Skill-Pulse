@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkillPulse - Shipped via GitHub Actions Pipeline v2</title>
+    <title>SkillPulse — Track your skills, log your learning</title>
     <script>
         // Prevent flash of wrong theme on page load
         (function() {
@@ -17,53 +17,211 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header class="header">
-        <div class="header-content">
-            <h1>SkillPulse</h1>
-            <p>Track your skills. Log your learning. Ship via GitHub Actions. [4th May 2026, 8:02 P.M]</p>
-        </div>
-        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">&#127769;</button>
-    </header>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="brand">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>
+                </span>
+                <div class="brand-text">
+                    <strong>SkillPulse</strong>
+                    <small>learning tracker</small>
+                </div>
+            </div>
 
-    <main class="container">
-        <!-- Dashboard Stats -->
-        <div class="stats" id="stats">
-            <div class="stat-card">
-                <div class="label">Total Skills</div>
-                <div class="value">-</div>
-            </div>
-            <div class="stat-card">
-                <div class="label">Hours Logged</div>
-                <div class="value">-</div>
-            </div>
-            <div class="stat-card">
-                <div class="label">Sessions</div>
-                <div class="value">-</div>
-            </div>
-            <div class="stat-card">
-                <div class="label">Top Skill</div>
-                <div class="value">-</div>
-            </div>
-        </div>
+            <nav class="nav">
+                <button class="nav-item active" data-view="dashboard">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-item" data-view="skills">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
+                    <span>My Skills</span>
+                </button>
+            </nav>
 
-        <!-- Skills Section -->
-        <div class="section-header">
-            <h2>My Skills</h2>
-            <button class="btn btn-primary" onclick="openAddModal()">+ Add Skill</button>
-        </div>
-
-        <div class="skills-grid" id="skills-grid">
-            <div class="empty-state" style="grid-column: 1 / -1">
-                <h3>Loading...</h3>
+            <div class="sidebar-footer">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <span class="theme-icon"></span>
+                    <span class="theme-label">Theme</span>
+                </button>
+                <p class="ship-note">Shipped via GitHub Actions&nbsp;⚡</p>
             </div>
-        </div>
-    </main>
+        </aside>
 
-    <!-- Add Skill Modal -->
-    <div class="modal-backdrop" id="add-skill-modal">
+        <!-- Main -->
+        <div class="main">
+            <header class="topbar">
+                <button class="icon-btn menu-btn" id="menu-btn" aria-label="Toggle menu">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+                </button>
+                <div class="topbar-title">
+                    <h1 id="view-title">Dashboard</h1>
+                    <p id="view-subtitle">Your learning at a glance</p>
+                </div>
+                <div class="export-menu">
+                    <button class="btn btn-secondary" id="export-btn" aria-haspopup="true">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4M5 21h14"/></svg>
+                        <span>Export</span>
+                    </button>
+                    <div class="export-dropdown" id="export-dropdown">
+                        <a href="/api/export?format=csv">Download CSV</a>
+                        <a href="/api/export?format=json">Download JSON</a>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="openAddModal()">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                    <span>Add Skill</span>
+                </button>
+            </header>
+
+            <!-- ===== Dashboard view ===== -->
+            <section class="view view-dashboard active" id="view-dashboard">
+                <!-- Insight banner -->
+                <div class="insight" id="insight">
+                    <span class="insight-ico">✨</span>
+                    <span id="insight-text">Loading your learning snapshot…</span>
+                </div>
+
+                <div class="stats" id="stats">
+                    <div class="stat-card skeleton"></div>
+                    <div class="stat-card skeleton"></div>
+                    <div class="stat-card skeleton"></div>
+                    <div class="stat-card skeleton"></div>
+                </div>
+
+                <!-- Achievements -->
+                <div class="panel panel-wide" id="achievements-panel">
+                    <div class="panel-head">
+                        <h3>Achievements</h3>
+                        <small id="badge-count"></small>
+                    </div>
+                    <div class="badges" id="badges"></div>
+                </div>
+
+                <div class="dash-grid">
+                    <!-- Streak + weekly goal -->
+                    <div class="panel" id="streak-panel">
+                        <div class="panel-head">
+                            <h3>Momentum</h3>
+                            <button class="btn btn-ghost btn-sm" id="edit-goal-btn" title="Edit weekly goal">✏️ Goal</button>
+                        </div>
+                        <div class="streak-row">
+                            <div class="streak-big">
+                                <span class="flame">🔥</span>
+                                <div>
+                                    <div class="streak-num" id="current-streak">0</div>
+                                    <div class="streak-cap">day streak</div>
+                                </div>
+                            </div>
+                            <div class="streak-meta">
+                                <div><span id="longest-streak">0</span><small>longest</small></div>
+                            </div>
+                        </div>
+                        <div class="goal">
+                            <div class="goal-top">
+                                <span>Weekly goal</span>
+                                <span><strong id="week-hours">0</strong> / <span id="week-goal">10</span> hrs</span>
+                            </div>
+                            <div class="progress-bar"><div class="fill" id="week-fill" style="width:0%"></div></div>
+                        </div>
+                    </div>
+
+                    <!-- Category breakdown -->
+                    <div class="panel" id="category-panel">
+                        <div class="panel-head"><h3>By category</h3></div>
+                        <div class="donut-wrap" id="donut-chart"></div>
+                    </div>
+
+                    <!-- Hours over time -->
+                    <div class="panel panel-wide" id="trend-panel">
+                        <div class="panel-head">
+                            <h3>Hours over time</h3>
+                            <div class="range-toggle" id="range-toggle">
+                                <button data-range="7">7d</button>
+                                <button data-range="30" class="active">30d</button>
+                                <button data-range="90">90d</button>
+                                <button data-range="all">All</button>
+                            </div>
+                        </div>
+                        <div class="chart-wrap chart-tall" id="trend-chart"></div>
+                    </div>
+
+                    <!-- Weekly bars -->
+                    <div class="panel" id="weekly-panel">
+                        <div class="panel-head"><h3>Hours per week</h3><small>last 8 weeks</small></div>
+                        <div class="chart-wrap" id="weekly-chart"></div>
+                    </div>
+
+                    <!-- Day of week -->
+                    <div class="panel" id="dow-panel">
+                        <div class="panel-head"><h3>By day of week</h3><small id="dow-best"></small></div>
+                        <div class="dow-wrap" id="dow-chart"></div>
+                    </div>
+
+                    <!-- Recent activity -->
+                    <div class="panel" id="activity-panel">
+                        <div class="panel-head"><h3>Recent activity</h3></div>
+                        <div class="activity-list" id="activity-list"></div>
+                    </div>
+
+                    <!-- Needs attention -->
+                    <div class="panel" id="attention-panel">
+                        <div class="panel-head"><h3>Needs attention</h3><small>not logged in 14+ days</small></div>
+                        <div class="attention-list" id="attention-list"></div>
+                    </div>
+
+                    <!-- Activity heatmap -->
+                    <div class="panel panel-wide" id="heatmap-panel">
+                        <div class="panel-head"><h3>Activity heatmap</h3><small>last 17 weeks</small></div>
+                        <div class="heatmap-wrap" id="heatmap"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== Skills view ===== -->
+            <section class="view view-skills" id="view-skills">
+                <div class="controls">
+                    <div class="search">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+                        <input type="text" id="search-input" placeholder="Search skills…" autocomplete="off">
+                    </div>
+                    <div class="sort">
+                        <label for="status-select">Status</label>
+                        <select id="status-select">
+                            <option value="all">All</option>
+                            <option value="active">Active</option>
+                            <option value="paused">Paused</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                    <div class="sort">
+                        <label for="sort-select">Sort</label>
+                        <select id="sort-select">
+                            <option value="recent">Recently added</option>
+                            <option value="hours">Most hours</option>
+                            <option value="progress">Closest to goal</option>
+                            <option value="name">Name (A–Z)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="chips" id="category-chips"></div>
+
+                <div class="skills-grid" id="skills-grid">
+                    <div class="empty-state" style="grid-column: 1 / -1"><h3>Loading…</h3></div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Add / Edit Skill Modal -->
+    <div class="modal-backdrop" id="skill-modal">
         <div class="modal">
-            <h3>Add a New Skill</h3>
-            <form id="add-skill-form">
+            <h3 id="skill-modal-title">Add a New Skill</h3>
+            <form id="skill-form">
+                <input type="hidden" id="skill-id">
                 <div class="form-group">
                     <label for="skill-name">Skill Name</label>
                     <input type="text" id="skill-name" placeholder="e.g., Docker, Kubernetes, Go" required>
@@ -84,19 +242,28 @@
                     <label for="skill-target">Target Hours (optional)</label>
                     <input type="number" id="skill-target" placeholder="e.g., 50" min="0">
                 </div>
+                <div class="form-group">
+                    <label for="skill-status">Status</label>
+                    <select id="skill-status">
+                        <option value="active">Active</option>
+                        <option value="paused">Paused</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Skill</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeSkillModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="skill-submit">Add Skill</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Log Session Modal -->
-    <div class="modal-backdrop" id="log-session-modal">
+    <!-- Log / Edit Session Modal -->
+    <div class="modal-backdrop" id="log-modal">
         <div class="modal">
-            <h3>Log Session: <span id="log-skill-name"></span></h3>
-            <form id="log-session-form">
+            <h3 id="log-modal-title">Log Session: <span id="log-skill-name"></span></h3>
+            <form id="log-form">
+                <input type="hidden" id="log-id">
                 <div class="form-group">
                     <label for="log-hours">Hours</label>
                     <input type="number" id="log-hours" step="0.5" min="0.5" placeholder="e.g., 1.5" required>
@@ -111,9 +278,37 @@
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeLogModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Log Session</button>
+                    <button type="submit" class="btn btn-primary" id="log-submit">Log Session</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Skill Detail Modal -->
+    <div class="modal-backdrop" id="detail-modal">
+        <div class="modal modal-lg">
+            <div class="detail-head">
+                <div>
+                    <h3 id="detail-name">Skill</h3>
+                    <span class="skill-category" id="detail-category"></span>
+                </div>
+                <button class="icon-btn" onclick="closeDetailModal()" aria-label="Close">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="detail-progress">
+                <div class="progress-bar"><div class="fill" id="detail-fill" style="width:0%"></div></div>
+                <div class="progress-text">
+                    <span id="detail-hours">0 hrs logged</span>
+                    <span id="detail-goal">No goal set</span>
+                </div>
+            </div>
+            <div class="detail-actions">
+                <button class="btn btn-primary btn-sm" id="detail-add-log">+ Log Session</button>
+                <button class="btn btn-secondary btn-sm" id="detail-edit-skill">Edit Skill</button>
+            </div>
+            <h4 class="detail-logs-title">Sessions</h4>
+            <div class="logs-list" id="detail-logs"></div>
         </div>
     </div>
 
