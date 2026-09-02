@@ -1,15 +1,18 @@
 CLUSTER  ?= skillpulse
-NAMESPACE ?= skillpulse
-BACKEND_IMAGE  ?= trainwithshubham/skillpulse-backend:latest
-FRONTEND_IMAGE ?= trainwithshubham/skillpulse-frontend:latest
+NAMESPACE ?= skillpulse-ns
+BACKEND_IMAGE  ?= sach990p/backend:1.0
+FRONTEND_IMAGE ?= sach990p/frontend:2.0
 
 .PHONY: up down build load apply status logs mysql restart
 
 up: ## One-shot: build images, create cluster, load images, apply manifests
 	$(MAKE) build
-	kind create cluster --config k8s/kind-config.yaml --name $(CLUSTER)
+	kind delete cluster --name $(CLUSTER)
+	kind create cluster --config k8s/kind-deployment/kind-config.yaml --name $(CLUSTER)
 	$(MAKE) load
 	$(MAKE) apply
+	docker system prune images -f
+
 	@echo
 	@echo "  SkillPulse is live at http://localhost:8888"
 	@echo
@@ -23,13 +26,18 @@ load: ## Push built images into the kind node
 	kind load docker-image $(FRONTEND_IMAGE) --name $(CLUSTER)
 
 apply: ## Apply manifests and wait for rollouts
-	kubectl apply -f k8s/00-namespace.yaml \
-	              -f k8s/10-mysql.yaml \
-	              -f k8s/20-backend.yaml \
-	              -f k8s/30-frontend.yaml
-	kubectl rollout status statefulset/mysql    -n $(NAMESPACE) --timeout=180s
-	kubectl rollout status deployment/backend   -n $(NAMESPACE) --timeout=120s
-	kubectl rollout status deployment/frontend  -n $(NAMESPACE) --timeout=60s
+	kubectl apply -f k8s/kind-deployment/namespace.yml \
+	              -f k8s/kind-deployment/configMaps.yml \
+	              -f k8s/kind-deployment/secrets.yml \
+	              -f k8s/kind-deployment/persistentVolume.yml \
+	              -f k8s/kind-deployment/pvc.yml \
+	              -f k8s/kind-deployment/service.yml \
+	              -f k8s/kind-deployment/mysql-deployment.yml \
+	              -f k8s/kind-deployment/backend.yml \
+	              -f k8s/kind-deployment/frontend.yml
+	kubectl rollout status deployment/mysql-deployment    -n $(NAMESPACE) --timeout=180s
+	kubectl rollout status deployment/backend-deployment   -n $(NAMESPACE) --timeout=120s
+	kubectl rollout status deployment/frontend-deployment  -n $(NAMESPACE) --timeout=60s
 
 down: ## Delete the cluster
 	kind delete cluster --name $(CLUSTER)
