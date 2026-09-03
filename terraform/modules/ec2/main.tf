@@ -15,30 +15,30 @@ resource "aws_vpc" "my_vpc" {
   }
 }
 
-resource aws_internet_gateway "my_igw" {
-    vpc_id     = aws_vpc.my_vpc.id
+resource "aws_internet_gateway" "my_igw" {
+  vpc_id = aws_vpc.my_vpc.id
 
-    tags = {
-        Name = "${var.env}-${var.aws_instance_tag}-igw"
-    }
+  tags = {
+    Name = "${var.env}-${var.aws_instance_tag}-igw"
+  }
 }
-resource aws_route_table "my_route_table" {
-    vpc_id     = aws_vpc.my_vpc.id
-    route {
-        cidr_block = "122.179.91.113/32"
-        gateway_id = aws_internet_gateway.my_igw.id
-    }
+resource "aws_route_table" "my_route_table" {
+  vpc_id = aws_vpc.my_vpc.id
+  route {
+    cidr_block = "122.179.91.113/32"
+    gateway_id = aws_internet_gateway.my_igw.id
+  }
 
-    tags = {
-        Name = "${var.env}-${var.aws_instance_tag}-rt"
-    }
+  tags = {
+    Name = "${var.env}-${var.aws_instance_tag}-rt"
+  }
 }
 
 
 
 resource "aws_subnet" "my_subnet" {
-  vpc_id     = aws_vpc.my_vpc.id
-  cidr_block = "10.0.0.0/26"
+  vpc_id                  = aws_vpc.my_vpc.id
+  cidr_block              = "10.0.0.0/26"
   map_public_ip_on_launch = var.aws_public_ip_on_launch
 
   tags = {
@@ -94,20 +94,30 @@ resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv6" {
 
 
 resource "aws_instance" "my_instance" {
-  ami                    = var.aws_ami_id
-  count                  = var.instance_count
-  instance_type          = var.aws_instance_type
-  vpc_security_group_ids = [aws_security_group.my_sg.id]
-  subnet_id              = aws_subnet.my_subnet.id
-  key_name               = aws_key_pair.my_key_pair.key_name
-  associate_public_ip_address = var.aws_associate_public_ip_address 
+  vpc_security_group_ids      = [aws_security_group.my_sg.id]
+  subnet_id                   = aws_subnet.my_subnet.id
+  key_name                    = aws_key_pair.my_key_pair.key_name
+  associate_public_ip_address = var.aws_associate_public_ip_address
+  # ami                    = var.aws_ami_id
+  # count                  = var.instance_count
+  # instance_type          = var.aws_instance_type
+
+  # using map value mentioned in variable.tf - for creating differrent instance of differrent os-family, ami id and instance type etc..  
+  for_each      = var.instances  # ITERATE AND CREATE 4 INSTANCES
+  ami           = each.value.ami # ITERATE THROUGH EACH INSTANCE AND GIVE ITS AMI VALUE
+  instance_type = each.value.instance_type
+
+
+
 
   root_block_device {
-    volume_size = var.volume_size
+    volume_size = each.value.volume_size
     volume_type = "gp3"
   }
   tags = {
-    Name = "${var.env}-${var.aws_instance_tag}-vm"
+    # Name = "${var.env}-${var.aws_instance_tag}-vm"
+    Name      = each.key
+    os_family = each.value.os_family
   }
 }
 
