@@ -23,7 +23,7 @@ locals {
   intra_subnets   = ["10.0.7.0/24", "10.0.8.0/24", "10.0.9.0/24"]
 
   tags = {
-    Project     = "AI-BankApp"
+    Project     = "Skillpulse"
     ManagedBy   = "terraform"
     Environment = "production"
   }
