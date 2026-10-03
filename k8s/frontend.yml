@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: sach990p/skillpulse-frontend:aa068d7
+        image: sach990p/skillpulse-frontend:c7623f9
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
