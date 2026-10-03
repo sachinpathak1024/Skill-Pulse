@@ -1,123 +1,128 @@
-# Key_Pair
+# resource "tls_private_key" "my_tls_key" {
+#     algorithm = "RSA"
+#     rsa_bits  = 4096
 
-resource "aws_key_pair" "my_key_pair" {
-  key_name   = "${var.env}-${var.aws_key_pair_name}-v2"
-  public_key = file("skillpulse.pub")
+# }
+
+resource "aws_key_pair" "my_key" {
+  key_name = var.aws_key_pair_name
+  #   public_key = tls_private_key.my_tls_key.private_key_pem
+  public_key = file(var.aws_public_key_path)
 }
 
-# VPC
+#____________________Custom VPC_______________________________________________
 
-resource "aws_vpc" "my_vpc" {
+resource "aws_vpc" "tf_vpc" {
   cidr_block = "10.0.0.0/24"
 
   tags = {
-    name = "${var.env}-${var.aws_instance_tag}-vpc"
+    name   = var.aws_vpc_name
+    server = var.aws_ec2_default_tag
   }
+
 }
 
-resource "aws_internet_gateway" "my_igw" {
-  vpc_id = aws_vpc.my_vpc.id
-
+resource "aws_internet_gateway" "tf_gateway" {
+  vpc_id = aws_vpc.tf_vpc.id
   tags = {
-    Name = "${var.env}-${var.aws_instance_tag}-igw"
+    name   = "skillpulse-gateway"
+    server = var.aws_ec2_default_tag
   }
 }
-resource "aws_route_table" "my_route_table" {
-  vpc_id = aws_vpc.my_vpc.id
+
+resource "aws_route_table" "tf_rt" {
+  vpc_id = aws_vpc.tf_vpc.id
   route {
-    cidr_block = "122.179.91.113/32"
-    gateway_id = aws_internet_gateway.my_igw.id
+    cidr_block = var.allowed_cidrs["egress_ipv4"]
+    gateway_id = aws_internet_gateway.tf_gateway.id
   }
-
   tags = {
-    Name = "${var.env}-${var.aws_instance_tag}-rt"
+    name   = "skillpulse-rt"
+    server = var.aws_ec2_default_tag
   }
 }
 
-
-
-resource "aws_subnet" "my_subnet" {
-  vpc_id                  = aws_vpc.my_vpc.id
+resource "aws_subnet" "tf_subnet" {
+  vpc_id                  = aws_vpc.tf_vpc.id
   cidr_block              = "10.0.0.0/26"
-  map_public_ip_on_launch = var.aws_public_ip_on_launch
-
+  map_public_ip_on_launch = true
   tags = {
-    Name = "${var.env}-${var.aws_instance_tag}-subnet"
-  }
-}
-
-resource "aws_route_table_association" "my_subnet_association" {
-  subnet_id      = aws_subnet.my_subnet.id
-  route_table_id = aws_route_table.my_route_table.id
-}
-
-# Security Groups
-
-resource "aws_security_group" "my_sg" {
-  name        = "${var.env}-${var.aws_security_group_name}"
-  vpc_id      = aws_vpc.my_vpc.id
-  description = "This Security Group manages traffic for skillpulse"
-
-
-  tags = {
-    Name = "${var.env}-${var.aws_instance_tag}-sg"
+    name   = "skillpulse-subnet"
+    server = var.aws_ec2_default_tag
   }
 
 }
-
-resource "aws_vpc_security_group_ingress_rule" "allow_front" {
-  security_group_id = aws_security_group.my_sg.id
-  cidr_ipv4         = "122.179.89.11/32"
-  from_port         = 8888
-  ip_protocol       = "tcp"
-  to_port           = 8888
+resource "aws_route_table_association" "tf_subnet_association" {
+  subnet_id      = aws_subnet.tf_subnet.id
+  route_table_id = aws_route_table.tf_rt.id
 }
+
+#____________________Security Group_______________________________________________
+
+resource "aws_security_group" "tf_sg" {
+  name   = var.aws_sg_name
+  vpc_id = aws_vpc.tf_vpc.id
+  tags = {
+    name   = var.aws_sg_name
+    server = var.aws_ec2_default_tag
+  }
+}
+
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh" {
-  security_group_id = aws_security_group.my_sg.id
-  cidr_ipv4         = "122.179.89.11/32"
+  security_group_id = aws_security_group.tf_sg.id
+  cidr_ipv4         = var.allowed_cidrs["ssh"]
   from_port         = 22
   ip_protocol       = "tcp"
   to_port           = 22
 }
-
+resource "aws_vpc_security_group_ingress_rule" "allow_http" {
+  security_group_id = aws_security_group.tf_sg.id
+  cidr_ipv4         = var.allowed_cidrs["http"]
+  from_port         = 80
+  ip_protocol       = "tcp"
+  to_port           = 80
+}
+resource "aws_vpc_security_group_ingress_rule" "allow_https" {
+  security_group_id = aws_security_group.tf_sg.id
+  cidr_ipv4         = var.allowed_cidrs["https"]
+  from_port         = 443
+  ip_protocol       = "tcp"
+  to_port           = 443
+}
 resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
-  security_group_id = aws_security_group.my_sg.id
-  cidr_ipv4         = "0.0.0.0/0"
+  security_group_id = aws_security_group.tf_sg.id
+  cidr_ipv4         = var.allowed_cidrs["egress_ipv4"]
   ip_protocol       = "-1" # semantically equivalent to all ports
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv6" {
-  security_group_id = aws_security_group.my_sg.id
-  cidr_ipv6         = "::/0"
+  security_group_id = aws_security_group.tf_sg.id
+  cidr_ipv6         = var.allowed_cidrs["egress_ipv6"]
   ip_protocol       = "-1" # semantically equivalent to all ports
 }
-
+#____________________Instance_______________________________________________
 
 resource "aws_instance" "my_instance" {
-  vpc_security_group_ids      = [aws_security_group.my_sg.id]
-  subnet_id                   = aws_subnet.my_subnet.id
-  key_name                    = aws_key_pair.my_key_pair.key_name
-  associate_public_ip_address = var.aws_associate_public_ip_address
-  # ami                    = var.aws_ami_id
-  # count                  = var.instance_count
-  # instance_type          = var.aws_instance_type
-
-  # using map value mentioned in variable.tf - for creating differrent instance of differrent os-family, ami id and instance type etc..  
-  for_each      = var.instances  # ITERATE AND CREATE 4 INSTANCES
-  ami           = each.value.ami # ITERATE THROUGH EACH INSTANCE AND GIVE ITS AMI VALUE
-  instance_type = each.value.instance_type
-
-
-
+  vpc_security_group_ids = [aws_security_group.tf_sg.id]
+  subnet_id              = aws_subnet.tf_subnet.id
+  key_name               = aws_key_pair.my_key.key_name
+  #   associate_public_ip_address = var.aws_associate_public_ip_address
+  ami = data.aws_ami.ubuntu.id
+  #   count                       = var.instance_count
+  instance_type = var.instance_type
 
   root_block_device {
-    volume_size = each.value.volume_size
+    volume_size = var.volume_size
     volume_type = "gp3"
+
   }
   tags = {
-    # Name = "${var.env}-${var.aws_instance_tag}-vm"
-    Name      = each.key
-    os_family = each.value.os_family
+    Name   = var.instance_name
+    server = var.aws_ec2_default_tag
+    ansible_group = "eks_server"
+
+
   }
 }
+
 

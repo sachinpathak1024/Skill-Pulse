@@ -1,0 +1,110 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: envoy-gateway
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: skillpulse-tls
+  namespace: skillpulse-ns
+spec:
+  secretName: skillpulse-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - skillpulse.sachinpathak.com
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: skillpulse-gateway
+  namespace: skillpulse-ns
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  gatewayClassName: envoy-gateway
+  listeners:
+    # HTTP — needed for cert-manager ACME HTTP-01 challenge validation
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    # HTTPS — TLS terminated at Envoy Gateway
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: skillpulse.sachinpathak.com
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: skillpulse-tls
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: skillpulse-route
+  namespace: skillpulse-ns
+spec:
+  hostnames:
+    - skillpulse.sachinpathak.com
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: skillpulse-gateway
+      sectionName: https
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: skillpulse-gateway
+      sectionName: http
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /health
+      backendRefs:
+        - name: backend-svc
+          port: 8080
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: backend-svc
+          port: 8080
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: frontend-svc
+          port: 80
+---
+# Session persistence: Cookie-based affinity for browser sessions
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: skillpulse-session
+  namespace: skillpulse-ns
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: skillpulse-route
+  loadBalancer:
+    type: ConsistentHash
+    consistentHash:
+      type: Cookie
+      cookie:
+        name: SKILLPULSE_AFFINITY
+        ttl: 3600s

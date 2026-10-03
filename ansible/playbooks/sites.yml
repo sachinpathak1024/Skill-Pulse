@@ -1,0 +1,10 @@
+---
+- hosts: eks_server
+  name: Master Playbook Execution
+  gather_facts: false
+  tasks:
+
+- import_playbook: docker_installation.yml
+- import_playbook: helm_installation.yml
+- import_playbook: awscli_installation.yml
+- import_playbook: terraform_installation.yml

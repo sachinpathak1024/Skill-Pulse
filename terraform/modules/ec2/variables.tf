@@ -1,106 +1,69 @@
 variable "aws_key_pair_name" {
-  default     = "skillpulse"
   type        = string
-  description = "skillpulse key pair"
+  default     = "eks-server-key"
+  description = "this is the key for the eks server vm"
+}
+
+variable "aws_public_key_path" {
+  type        = string
+  default     = "./eks-key.pub"
+  description = "this is the path of the key to create eks server vm"
+}
+variable "aws_vpc_name" {
+  type        = string
+  default     = "skillpulse-vpc"
+  description = "this is the name of the vpc of eks server vm"
+}
+variable "aws_ec2_default_tag" {
+  type        = string
+  default     = "skillpulse"
+  description = "this is the default additional tag for the all the resources on eks server vm"
+}
+variable "aws_sg_name" {
+  type        = string
+  default     = "skillpulse-sg"
+  description = "name of the sg"
 }
 
 
-variable "aws_instance_tag" {
-  default     = "skillpulse"
+# All allowed CIDR blocks grouped together in one variable instead of multiple standalone variables(using map(string))
+variable "allowed_cidrs" {
+  type = map(string)
+  default = {
+    ssh         = "122.179.90.224/32"
+    http        = "0.0.0.0/0"
+    https       = "0.0.0.0/0"
+    egress_ipv4 = "0.0.0.0/0"
+    egress_ipv6 = "::/0"
+  }
+}
+variable "ubuntu_version" {
   type        = string
-  description = "skillpulse tag"
+  description = "Ubuntu LTS release codename or version"
+  default     = "noble-24.04" # Or "jammy-22.04" - you can change os without modifying data block query
 }
 
-variable "aws_public_ip_on_launch" {
-  default     = true
+
+variable "aws_associate_public_ip_address" {
   type        = bool
+  default     = true
   description = "to assign public ip on launch"
 }
 
-# variable instance_count {
-#     # default = 2
-#     type = number
-#     description = "Instances counts"
-# }
-
-
-variable "instances" {
-  description = "map of instances"
-  type = map(object({
-    instance_type = string
-    volume_size   = number
-    ami           = string
-    user          = string
-    os_family     = string
-  }))
-  default = {
-    "control-node-ubuntu" = {
-      ami           = "ami-02167eae61967e403"
-      user          = "ubuntu"
-      os_family     = "ubuntu"
-      instance_type = "t3.small"
-      volume_size   = 15
-    }
-    "worker-redhat" = {
-      ami           = "ami-0da467f007dfebd6b"
-      user          = "ec2-user"
-      os_family     = "redhat"
-      instance_type = "t3.small"
-      volume_size   = 15
-    }
-    "worker-ubuntu" = {
-      ami           = "ami-02167eae61967e403"
-      user          = "ubuntu"
-      os_family     = "ubuntu"
-      instance_type = "t3.small"
-      volume_size   = 15
-    }
-    "worker-amazon" = {
-      ami           = "ami-0bea529386a62a2ad"
-      user          = "ec2-user"
-      os_family     = "amazon"
-      instance_type = "t3.small"
-      volume_size   = 15
-    }
-  }
-}
-
-
-variable "env" {
-  # default = 2
+variable "instance_type" {
   type        = string
-  description = "Instances counts"
+  default     = "m7i-flex.large"
+  description = "instance type"
 }
 
 
-variable "aws_security_group_name" {
-  default     = "skillpulse_sg"
+variable "volume_size" {
+  type        = number
+  default     = 20
+  description = "volume_size"
+}
+variable "instance_name" {
   type        = string
-  description = "security group name"
+  default     = "eks-server"
+  description = "name of instance"
 }
-
-
-# variable aws_ami_id {
-#     default = "ami-02167eae61967e403"
-#     type = string
-#     description = "ami id of instance"
-# }
-
-# variable aws_instance_type {
-#     # default = "t3.small"
-#     type = string
-#     description = "instance_type of an instance"
-# }
-
-variable "aws_associate_public_ip_address" {
-  default     = true
-  type        = bool
-  description = "public ip"
-}
-
-
-# variable volume_size {
-#     # default = 20
-#     type = number
-#     description = "instance_type of an instance"
-# }

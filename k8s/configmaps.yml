@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skillpulse-config
+  namespace: skillpulse-ns
+
+data:
+  MYSQL_DATABASE: skillpulse
+  MYSQL_USER: skillpulse
+  DB_HOST: mysql-svc
+  DB_PORT: "3306"
+  DB_USER: skillpulse
+  DB_NAME: skillpulse

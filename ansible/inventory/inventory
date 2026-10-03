@@ -1,0 +1,10 @@
+# static Inventory - updated using update_inventory.sh script to get its host
+
+[eks-server]
+server1 ansible_host=44.246.127.248
+
+[eks-server:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=../terraform/modules/ec2/eks-key
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'

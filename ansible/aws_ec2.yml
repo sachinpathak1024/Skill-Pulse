@@ -1,0 +1,22 @@
+plugin: amazon.aws.aws_ec2
+
+regions:
+  - us-west-2
+
+filters:
+  instance-state-name:
+    - running
+
+hostnames:
+  - ip-address
+  - private-ip-address
+  - instance-id
+
+keyed_groups:
+  - key: tags.ansible_group
+    prefix: ""
+    separator: ""
+  - key: tags.server
+    prefix: ""
+compose:
+  ansible_user: "ubuntu"

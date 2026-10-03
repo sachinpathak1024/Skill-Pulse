@@ -1,0 +1,58 @@
+---
+- name: Install Terraform on Ubuntu
+  hosts: eks_server
+  become: true
+  vars:
+    # Fail-safe lock timeout if apt is running in the background
+    apt_timeout: 60
+
+  tasks:
+    - name: Ensure required dependencies are installed
+      apt:
+        name:
+          - gnupg
+          - software-properties-common
+          - curl
+        state: present
+        update_cache: true
+        lock_timeout: "{{ apt_timeout }}"
+
+    - name: Create directory for system keyrings
+      file:
+        path: /usr/share/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download and add HashiCorp GPG key
+      get_url:
+        url: https://apt.releases.hashicorp.com/gpg
+        dest: /tmp/hashicorp.gpg
+        mode: '0644'
+
+    - name: Dearmor HashiCorp GPG key to trusted keyring
+      command:
+        cmd: gpg --yes --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg /tmp/hashicorp.gpg
+        creates: /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+    - name: Add official HashiCorp APT repository
+      apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+        state: present
+        filename: hashicorp
+
+    - name: Install Terraform
+      apt:
+        name: terraform
+        state: present
+        update_cache: true
+        lock_timeout: "{{ apt_timeout }}"
+
+    - name: Verify Terraform installation
+      command:
+        cmd: terraform --version
+      register: terraform_version
+      changed_when: false
+
+    - name: Display Terraform version
+      debug:
+        msg: "Installed: {{ terraform_version.stdout_lines[0] }}"

@@ -1,12 +1,3 @@
-# OS
-.DS_Store
-Thumbs.db
-
-# Editor
-.vscode/
-.idea/
-*.swp
-
 # Local env files
 .env
 .env.local
@@ -20,3 +11,86 @@ CLAUDE.md
 # Intermediate PDF render output (regenerated from .md + .css)
 docs/skillpulse-cicd-guide.html
 docs/skillpulse-kubernetes-guide.html
+
+
+# =================(
+# TERRAFORM
+# =================)
+# Local directory for modules and provider plugins
+.terraform/
+
+# Terraform state files (containing potential secrets)
+*.tfstate
+*.tfstate.*
+*.tfstate.lock.info
+.terraform.tfstate.lock.info
+.terraform.lock.hcl
+
+
+# Terraform execution plans and binary logs
+*.tfplan
+crash.log
+crash.*.log
+
+# Environment variables and sensitive variable files
+*.tfvars
+*.tfvars.json
+
+# Override files used for local testing
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform CLI config
+.terraformrc
+terraform.rc
+
+
+# =================(
+# ANSIBLE
+# =================)
+# Ansible retry files generated upon task failures
+*.retry
+
+# Vault password files (do not commit actual secrets!)
+.vault_pass
+.vault-pass.txt
+
+# Temporary inventory or generated output files
+host_vars/*.retry
+group_vars/*.retry
+
+
+# =================(
+# AWS & CREDENTIALS
+# =================)
+# AWS CLI credential profiles or shared files
+.aws/
+credentials
+config
+
+# Private SSH keys used to connect to AWS EC2 instances
+*.pem
+*.key
+id_rsa
+id_rsa.pub
+*-key.pub
+*-key
+
+# =================(
+# GENERAL / OS / IDE
+# =================)
+# macOS system files
+.DS_Store
+
+# Windows thumbnail and system files
+Thumbs.db
+ehthumbs.db
+
+# Editor directories and configurations
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

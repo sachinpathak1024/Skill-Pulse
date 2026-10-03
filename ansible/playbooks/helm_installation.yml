@@ -1,0 +1,41 @@
+- name: Install Helm on Ubuntu EC2
+  hosts: eks_server
+  become: true
+  gather_facts: false
+
+
+  tasks:
+      - name: update repository
+        apt:
+          update_cache: yes
+
+      - name: ensuring dependencies are isntalled
+        apt:
+          pkg: 
+            - curl
+            - git
+          state: present
+          update_cache: yes
+
+
+      - name: Download the official Helm installer script
+        get_url:
+          url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
+          dest: /tmp/get_helm.sh
+          mode: '0700'
+
+
+      - name: Execute the Helm installation script
+        command: /tmp/get_helm.sh
+        args:
+          creates: /usr/local/bin/helm
+
+
+      - name: Verify Helm version
+        command: helm version
+        register: helm_version_output
+        changed_when: false
+
+      - name: Print installed Helm version
+        debug:
+          var: helm_version_output.stdout
