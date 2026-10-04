@@ -30,7 +30,7 @@ spec:
 
       containers:
       - name: backend
-        image: sach990p/skillpulse-backend:fdb6c8c
+        image: sach990p/skillpulse-backend:d03d68b
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
