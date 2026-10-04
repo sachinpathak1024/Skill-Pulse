@@ -5,7 +5,7 @@ metadata:
   namespace: skillpulse-ns
 spec:
   selector:
-    app: mysql-label
+    app: mysql
   ports:
     - port: 3306
 ---
