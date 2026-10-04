@@ -25,49 +25,49 @@ spec:
         - containerPort: 3306
 
 
-      env:
-        - name: MYSQL_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: skillpulse-secret
-              key: MYSQL_ROOT_PASSWORD
-        - name: MYSQL_DATABASE
-          valueFrom:
-            configMapKeyRef:
-              name: skillpulse-config
-              key: MYSQL_DATABASE
-      resources:
-        requests:
-          memory: "256Mi"
-          cpu: "250m"
-        limits:
-          memory: "512Mi"
-          cpu: "500m"
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: skillpulse-secret
+                key: MYSQL_ROOT_PASSWORD
+          - name: MYSQL_DATABASE
+            valueFrom:
+              configMapKeyRef:
+                name: skillpulse-config
+                key: MYSQL_DATABASE
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
 
-      volumeMounts:
-            - name: mysql-storage
-              mountPath: /var/lib/mysql
-            - name: init
-              mountPath: /docker-entrypoint-initdb.d
-              readOnly: true
+        volumeMounts:
+              - name: mysql-storage
+                mountPath: /var/lib/mysql
+              - name: init
+                mountPath: /docker-entrypoint-initdb.d
+                readOnly: true
 
-      readinessProbe:
-          exec:
-            command: ["mysqladmin", "ping", "-h", "localhost"]
-          initialDelaySeconds: 15
-          failureThreshold: 10
-
-      livenessProbe:
+        readinessProbe:
             exec:
-              command: ["mysqladmin", "ping", "-h", "localhost"]
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            failureThreshold: 5
+              command: ["sh", "-c", "mysqladmin ping -u root -p$MYSQL_ROOT_PASSWORD"]
+            initialDelaySeconds: 15
+            failureThreshold: 10
+
+        livenessProbe:
+              exec:
+                command: ["sh", "-c", "mysqladmin ping -u root -p$MYSQL_ROOT_PASSWORD"]
+              initialDelaySeconds: 30
+              periodSeconds: 10
+              failureThreshold: 5
         
-    volumes:
-    - name: mysql-storage
-      persistentVolumeClaim:
-            claimName: mysql-pvc
-    - name: init
-      configMap:
-        name: mysql-init
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+              claimName: mysql-pvc
+      - name: init
+        configMap:
+          name: mysql-init
