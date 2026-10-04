@@ -2,9 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mysql-deployment
+  namespace: skillpulse-ns
   labels:
     app: mysql
-  namespace: skillpulse-ns
+  
 spec:
   replicas: 1
   strategy:
@@ -46,6 +47,10 @@ spec:
       volumeMounts:
             - name: mysql-storage
               mountPath: /var/lib/mysql
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+
       readinessProbe:
           exec:
             command: ["mysqladmin", "ping", "-h", "localhost"]
@@ -63,3 +68,6 @@ spec:
     - name: mysql-storage
       persistentVolumeClaim:
             claimName: mysql-pvc
+    - name: init
+      configMap:
+        name: mysql-init

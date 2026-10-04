@@ -23,6 +23,6 @@ spec:
         - containerPort: 80
         envFrom:
           - configMapRef:
-             name: skillpulse-configmap
+             name: skillpulse-config
           - secretRef:
-             name: skillpulse-secrets
+             name: skillpulse-secret

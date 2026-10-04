@@ -30,7 +30,7 @@ variable "aws_sg_name" {
 variable "allowed_cidrs" {
   type = map(string)
   default = {
-    ssh         = "122.181.103.101/32"
+    ssh         = "122.181.101.143/32"
     http        = "0.0.0.0/0"
     https       = "0.0.0.0/0"
     egress_ipv4 = "0.0.0.0/0"
